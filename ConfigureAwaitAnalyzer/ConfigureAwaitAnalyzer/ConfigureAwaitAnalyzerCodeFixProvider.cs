@@ -3,8 +3,6 @@ using Microsoft.CodeAnalysis.CodeActions;
 using Microsoft.CodeAnalysis.CodeFixes;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
-using Microsoft.CodeAnalysis.Rename;
-using System;
 using System.Collections.Immutable;
 using System.Composition;
 using System.Linq;
@@ -17,6 +15,7 @@ namespace ConfigureAwaitAnalyzer
     public class ConfigureAwaitAnalyzerCodeFixProvider : CodeFixProvider
     {
         private const string configureAwaitMissingTitle = "Add 'ConfigureAwait(false)'";
+        private const string configureAwaitTrueTitle = "Set 'ConfigureAwait' to false";
 
         public sealed override ImmutableArray<string> FixableDiagnosticIds => ImmutableArray.Create(ConfigureAwaitAnalyzerAnalyzer.DiagnosticId);
 
@@ -44,6 +43,15 @@ namespace ConfigureAwaitAnalyzer
                             equivalenceKey: configureAwaitMissingTitle),
                         diagnostic);
                     break;
+
+                case "true":
+                    context.RegisterCodeFix(
+                        CodeAction.Create(
+                            title: configureAwaitTrueTitle,
+                            createChangedSolution: c => Task.Run(() => ReplaceConfigureAwaitTrue(context.Document, root, awaitExpression, c)),
+                            equivalenceKey: configureAwaitTrueTitle),
+                        diagnostic);
+                    break;
             }
         }
 
@@ -61,6 +69,22 @@ namespace ConfigureAwaitAnalyzer
 
             return document
                 .WithSyntaxRoot(root.ReplaceNode(awaitExpression, newAwaitExpr))
+                .Project
+                .Solution;
+        }
+
+        private Solution ReplaceConfigureAwaitTrue(Document document, SyntaxNode root, AwaitExpressionSyntax awaitExpression, CancellationToken c)
+        {
+            var argumentList = awaitExpression.DescendantNodes().OfType<ArgumentListSyntax>().Last();
+            var argument = argumentList.Arguments[0];
+
+            var newArgument = argument.WithExpression(SyntaxFactory.LiteralExpression(SyntaxKind.FalseLiteralExpression));
+            var newArgumentList = argumentList.ReplaceNode(argument, newArgument);
+
+            var newAwaitExpression = awaitExpression.ReplaceNode(argumentList, newArgumentList);
+
+            return document
+                .WithSyntaxRoot(root.ReplaceNode(awaitExpression, newAwaitExpression))
                 .Project
                 .Solution;
         }
