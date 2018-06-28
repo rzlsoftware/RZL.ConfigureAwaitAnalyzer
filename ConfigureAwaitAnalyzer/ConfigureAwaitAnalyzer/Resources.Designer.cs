@@ -62,6 +62,24 @@ namespace ConfigureAwaitAnalyzer {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to ConfigureAwait must be set to false.
+        /// </summary>
+        internal static string ConfigureAwaitTrueMessage {
+            get {
+                return ResourceManager.GetString("ConfigureAwaitTrueMessage", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to ConfigureAwait must be set to false.
+        /// </summary>
+        internal static string ConfigureAwaitTrueTitle {
+            get {
+                return ResourceManager.GetString("ConfigureAwaitTrueTitle", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Missing ConfigureAwait(false).
         /// </summary>
         internal static string MissingConfigureAwaitMessage {

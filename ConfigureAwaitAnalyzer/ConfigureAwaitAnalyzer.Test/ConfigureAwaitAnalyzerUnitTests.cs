@@ -97,6 +97,65 @@ namespace Domain.Services
             VerifyCSharpFix(test, fixtest);
         }
 
+        [TestMethod]
+        public void When_ConfigureAwait_true_is_provided_validation_should_return_an_error()
+        {
+            var test = @"
+using System.Threading.Tasks;
+
+namespace Domain.Services
+{
+    public class Service
+    {
+        public async Task DoAsyncStuff()
+            => await Task.Delay(30).ConfigureAwait(true);
+
+        public async Task DoSomeOtherAsyncStuff()
+        {
+            await Task.Delay(30).ConfigureAwait(true);
+        }
+    }
+}";
+            var expected = new[]
+            {
+                new DiagnosticResult
+                {
+                    Id = "ConfigureAwaitAnalyzer",
+                    Message = "ConfigureAwait must be set to false",
+                    Severity = DiagnosticSeverity.Error,
+                    Locations = new[] { new DiagnosticResultLocation("Test0.cs", line: 9, column: 16) }
+                },
+                new DiagnosticResult
+                {
+                    Id = "ConfigureAwaitAnalyzer",
+                    Message = "ConfigureAwait must be set to false",
+                    Severity = DiagnosticSeverity.Error,
+                    Locations = new[] { new DiagnosticResultLocation("Test0.cs", line: 13, column: 13) }
+                }
+            };
+
+            VerifyCSharpDiagnostic(test, expected);
+
+//            var fixtest = @"
+//using System.Threading.Tasks;
+
+//namespace Domain.Services
+//{
+//    public class Service
+//    {
+//        public async Task DoAsyncStuff()
+//            => await Task.Delay(30).ConfigureAwait(false);
+
+//        public async Task DoSomeOtherAsyncStuff()
+//        {
+//            await Task.Delay(30).ConfigureAwait(false);
+//        }
+//    }
+//}";
+
+//            VerifyCSharpFix(test, fixtest);
+        }
+
         protected override CodeFixProvider GetCSharpCodeFixProvider()
             => new ConfigureAwaitAnalyzerCodeFixProvider();
 
