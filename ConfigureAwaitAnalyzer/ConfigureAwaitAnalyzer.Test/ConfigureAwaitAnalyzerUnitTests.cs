@@ -2,7 +2,6 @@ using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CodeFixes;
 using Microsoft.CodeAnalysis.Diagnostics;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
-using System;
 using TestHelper;
 
 namespace ConfigureAwaitAnalyzer.Test
@@ -43,12 +42,7 @@ namespace Domain.Services
         public void When_ConfigureAwait_false_is_missing_validation_should_return_an_error()
         {
             var test = @"
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
 using System.Threading.Tasks;
-using System.Diagnostics;
 
 namespace Domain.Services
 {
@@ -70,26 +64,21 @@ namespace Domain.Services
                     Id = "ConfigureAwaitAnalyzer",
                     Message = "Missing ConfigureAwait(false)",
                     Severity = DiagnosticSeverity.Error,
-                    Locations = new[] { new DiagnosticResultLocation("Test0.cs", line: 14, column: 16) }
+                    Locations = new[] { new DiagnosticResultLocation("Test0.cs", line: 9, column: 16) }
                 },
                 new DiagnosticResult
                 {
                     Id = "ConfigureAwaitAnalyzer",
                     Message = "Missing ConfigureAwait(false)",
                     Severity = DiagnosticSeverity.Error,
-                    Locations = new[] { new DiagnosticResultLocation("Test0.cs", line: 18, column: 13) }
+                    Locations = new[] { new DiagnosticResultLocation("Test0.cs", line: 13, column: 13) }
                 }
             };
 
             VerifyCSharpDiagnostic(test, expected);
 
 //            var fixtest = @"
-//using System;
-//using System.Collections.Generic;
-//using System.Linq;
-//using System.Text;
 //using System.Threading.Tasks;
-//using System.Diagnostics;
 
 //namespace Domain.Services
 //{
