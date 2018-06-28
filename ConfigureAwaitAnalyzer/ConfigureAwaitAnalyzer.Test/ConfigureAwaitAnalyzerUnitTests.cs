@@ -7,7 +7,7 @@ using TestHelper;
 namespace ConfigureAwaitAnalyzer.Test
 {
     [TestClass]
-    public class UnitTest : CodeFixVerifier
+    public class ConfigureAwaitAnalyzerUnitTests : CodeFixVerifier
     {
         [TestMethod]
         public void When_ConfigureAwait_false_is_provided_validation_should_pass()
