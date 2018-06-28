@@ -77,24 +77,24 @@ namespace Domain.Services
 
             VerifyCSharpDiagnostic(test, expected);
 
-//            var fixtest = @"
-//using System.Threading.Tasks;
+            var fixtest = @"
+using System.Threading.Tasks;
 
-//namespace Domain.Services
-//{
-//    public class Service
-//    {
-//        public async Task DoAsyncStuff()
-//            => await Task.Delay(30).ConfigureAwait(false);
+namespace Domain.Services
+{
+    public class Service
+    {
+        public async Task DoAsyncStuff()
+            => await Task.Delay(30).ConfigureAwait(false);
 
-//        public async Task DoSomeOtherAsyncStuff()
-//        {
-//            await Task.Delay(30).ConfigureAwait(false);
-//        }
-//    }
-//}";
+        public async Task DoSomeOtherAsyncStuff()
+        {
+            await Task.Delay(30).ConfigureAwait(false);
+        }
+    }
+}";
 
-//            VerifyCSharpFix(test, fixtest);
+            VerifyCSharpFix(test, fixtest);
         }
 
         protected override CodeFixProvider GetCSharpCodeFixProvider()

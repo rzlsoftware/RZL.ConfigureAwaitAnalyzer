@@ -1,73 +1,68 @@
+using Microsoft.CodeAnalysis;
+using Microsoft.CodeAnalysis.CodeActions;
+using Microsoft.CodeAnalysis.CodeFixes;
+using Microsoft.CodeAnalysis.CSharp;
+using Microsoft.CodeAnalysis.CSharp.Syntax;
+using Microsoft.CodeAnalysis.Rename;
 using System;
-using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Composition;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
-using Microsoft.CodeAnalysis;
-using Microsoft.CodeAnalysis.CodeFixes;
-using Microsoft.CodeAnalysis.CodeActions;
-using Microsoft.CodeAnalysis.CSharp;
-using Microsoft.CodeAnalysis.CSharp.Syntax;
-using Microsoft.CodeAnalysis.Rename;
-using Microsoft.CodeAnalysis.Text;
 
 namespace ConfigureAwaitAnalyzer
 {
     [ExportCodeFixProvider(LanguageNames.CSharp, Name = nameof(ConfigureAwaitAnalyzerCodeFixProvider)), Shared]
     public class ConfigureAwaitAnalyzerCodeFixProvider : CodeFixProvider
     {
-        private const string title = "Make uppercase";
+        private const string configureAwaitMissingTitle = "Add 'ConfigureAwait(false)'";
 
-        public sealed override ImmutableArray<string> FixableDiagnosticIds
-        {
-            get { return ImmutableArray.Create(ConfigureAwaitAnalyzerAnalyzer.DiagnosticId); }
-        }
+        public sealed override ImmutableArray<string> FixableDiagnosticIds => ImmutableArray.Create(ConfigureAwaitAnalyzerAnalyzer.DiagnosticId);
 
         public sealed override FixAllProvider GetFixAllProvider()
-        {
             // See https://github.com/dotnet/roslyn/blob/master/docs/analyzers/FixAllProvider.md for more information on Fix All Providers
-            return WellKnownFixAllProviders.BatchFixer;
-        }
+            => WellKnownFixAllProviders.BatchFixer;
 
         public sealed override async Task RegisterCodeFixesAsync(CodeFixContext context)
         {
             var root = await context.Document.GetSyntaxRootAsync(context.CancellationToken).ConfigureAwait(false);
 
-            // TODO: Replace the following code with your own analysis, generating a CodeAction for each fix to suggest
             var diagnostic = context.Diagnostics.First();
             var diagnosticSpan = diagnostic.Location.SourceSpan;
 
-            // Find the type declaration identified by the diagnostic.
-            var declaration = root.FindToken(diagnosticSpan.Start).Parent.AncestorsAndSelf().OfType<TypeDeclarationSyntax>().First();
+            var awaitExpression = root.FindToken(diagnosticSpan.Start).Parent as AwaitExpressionSyntax;
 
-            // Register a code action that will invoke the fix.
-            context.RegisterCodeFix(
-                CodeAction.Create(
-                    title: title,
-                    createChangedSolution: c => MakeUppercaseAsync(context.Document, declaration, c), 
-                    equivalenceKey: title),
-                diagnostic);
+            var tag = diagnostic.Descriptor.CustomTags.First();
+            switch (tag)
+            {
+                case "missing":
+                    context.RegisterCodeFix(
+                        CodeAction.Create(
+                            title: configureAwaitMissingTitle,
+                            createChangedSolution: c => Task.Run(() => AddConfigureAwaitFalse(context.Document, root, awaitExpression, c)),
+                            equivalenceKey: configureAwaitMissingTitle),
+                        diagnostic);
+                    break;
+            }
         }
 
-        private async Task<Solution> MakeUppercaseAsync(Document document, TypeDeclarationSyntax typeDecl, CancellationToken cancellationToken)
+        private Solution AddConfigureAwaitFalse(Document document, SyntaxNode root, AwaitExpressionSyntax awaitExpression, CancellationToken c)
         {
-            // Compute new uppercase name.
-            var identifierToken = typeDecl.Identifier;
-            var newName = identifierToken.Text.ToUpperInvariant();
+            var configureAwait = SyntaxFactory.IdentifierName(nameof(Task.ConfigureAwait));
+            var dotToken = SyntaxFactory.Token(SyntaxKind.DotToken);
+            var simpleMemberAccessExpr = SyntaxFactory.MemberAccessExpression(SyntaxKind.SimpleMemberAccessExpression, awaitExpression.Expression, dotToken, configureAwait);
 
-            // Get the symbol representing the type to be renamed.
-            var semanticModel = await document.GetSemanticModelAsync(cancellationToken);
-            var typeSymbol = semanticModel.GetDeclaredSymbol(typeDecl, cancellationToken);
+            var argument = SyntaxFactory.Argument(SyntaxFactory.LiteralExpression(SyntaxKind.FalseLiteralExpression));
+            var argumentList = SyntaxFactory.ArgumentList(SyntaxFactory.SeparatedList(new[] { argument }));
 
-            // Produce a new solution that has all references to that type renamed, including the declaration.
-            var originalSolution = document.Project.Solution;
-            var optionSet = originalSolution.Workspace.Options;
-            var newSolution = await Renamer.RenameSymbolAsync(document.Project.Solution, typeSymbol, newName, optionSet, cancellationToken).ConfigureAwait(false);
+            var invocationExpr = SyntaxFactory.InvocationExpression(simpleMemberAccessExpr, argumentList);
+            var newAwaitExpr = awaitExpression.WithExpression(invocationExpr);
 
-            // Return the new solution with the now-uppercase type name.
-            return newSolution;
+            return document
+                .WithSyntaxRoot(root.ReplaceNode(awaitExpression, newAwaitExpr))
+                .Project
+                .Solution;
         }
     }
 }
