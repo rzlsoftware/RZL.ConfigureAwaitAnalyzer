@@ -62,16 +62,16 @@ namespace ConfigureAwaitAnalyzer {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Type name &apos;{0}&apos; contains lowercase letters.
+        ///   Looks up a localized string similar to Missing ConfigureAwait(false).
         /// </summary>
-        internal static string MissingConfigureAwaitMessageFormat {
+        internal static string MissingConfigureAwaitMessage {
             get {
-                return ResourceManager.GetString("MissingConfigureAwaitMessageFormat", resourceCulture);
+                return ResourceManager.GetString("MissingConfigureAwaitMessage", resourceCulture);
             }
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Type name contains lowercase letters.
+        ///   Looks up a localized string similar to ConfigureAwait(false) expected.
         /// </summary>
         internal static string MissingConfigureTitle {
             get {
