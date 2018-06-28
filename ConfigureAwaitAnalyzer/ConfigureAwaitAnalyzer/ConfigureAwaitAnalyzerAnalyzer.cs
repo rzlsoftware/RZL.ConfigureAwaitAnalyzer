@@ -18,7 +18,7 @@ namespace ConfigureAwaitAnalyzer
         private static readonly LocalizableString MissingConfigureAwaitMessage = new LocalizableResourceString(nameof(Resources.MissingConfigureAwaitMessage), Resources.ResourceManager, typeof(Resources));
         private const string Category = "ConfigureAwaitAnalyzer";
 
-        private readonly static DiagnosticDescriptor MissingConfigureAwaitRule = new DiagnosticDescriptor(DiagnosticId, MissingConfigureTitle, MissingConfigureAwaitMessage, Category, DiagnosticSeverity.Error, isEnabledByDefault: true, customTags: "MissingConfigureAwait");
+        private readonly static DiagnosticDescriptor MissingConfigureAwaitRule = new DiagnosticDescriptor(DiagnosticId, MissingConfigureTitle, MissingConfigureAwaitMessage, Category, DiagnosticSeverity.Error, isEnabledByDefault: true, customTags: "missing");
 
         public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics => ImmutableArray.Create(MissingConfigureAwaitRule);
 
@@ -32,7 +32,7 @@ namespace ConfigureAwaitAnalyzer
             var containsConfigureAwait = awaitExpression
                 .DescendantTokens()
                 .OfType<SyntaxToken>()
-                .Any(x => x.Value != null && x.Value.Equals(nameof(Task.ConfigureAwait)));
+                .Any(x => x.Value is nameof(Task.ConfigureAwait));
 
             if (!containsConfigureAwait)
             {
